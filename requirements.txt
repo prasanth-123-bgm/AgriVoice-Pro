@@ -1,0 +1,10 @@
+Flask
+requests
+gTTS
+numpy
+pandas
+joblib
+sentence-transformers
+torch
+python-dotenv
+deep-translator
