@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🌿 AgriVoice Pro</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="main-container">
+    <header>
+      <div class="header-left">
+        <h1 class="project-title">🌿 AgriVoice Pro</h1>
+        <h2 class="project-caption">AI-Powered Agricultural Assistant</h2>
+      </div>
+      <div class="lang-select">
+        <span>Select Language:</span>
+        <label><input type="radio" name="lang" value="English" checked> English</label>
+        <label><input type="radio" name="lang" value="తెలుగు"> తెలుగు</label>
+        <label><input type="radio" name="lang" value="हिन्दी"> हिन्दी</label>
+      </div>
+    </header>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="weather">🌤 Weather</button>
+      <button class="tab-btn" data-tab="crop">🌱 Crop</button>
+      <button class="tab-btn" data-tab="scheme">🏛 Schemes</button>
+      <button class="tab-btn" data-tab="pest">🐛 Pest</button>
+    </nav>
+    <section class="tab-content" id="weather" style="display:block;">
+      <div class="weather-header">
+        <span id="weather-icon" class="weather-icon">☀️</span>
+        <h3>Weather Forecast</h3>
+      </div>
+      <input type="text" id="weather_loc" placeholder="Enter city/village name">
+      <button class="action-btn" onclick="getWeather()">Get Weather</button>
+      <div id="weather_output"></div>
+      <audio id="weather_audio" controls style="display:none"></audio>
+    </section>
+    <section class="tab-content" id="crop">
+      <h3>Crop Recommendation</h3>
+      <div class="crop-inputs">
+        <input type="number" id="n" placeholder="Nitrogen (N)">
+        <input type="number" id="p" placeholder="Phosphorus (P)">
+        <input type="number" id="k" placeholder="Potassium (K)">
+        <input type="number" step="0.1" id="temp" placeholder="Temperature (°C)">
+        <input type="number" step="0.1" id="hum" placeholder="Humidity (%)">
+        <input type="number" step="0.1" id="ph" placeholder="pH Level">
+        <input type="number" step="0.1" id="rain" placeholder="Rainfall (mm)">
+      </div>
+      <button class="action-btn" onclick="getCrop()">Get Recommendation</button>
+      <div id="crop_output"></div>
+      <audio id="crop_audio" controls style="display:none"></audio>
+    </section>
+    <section class="tab-content" id="scheme">
+      <h3>Government Schemes</h3>
+      <input type="text" id="scheme_q" placeholder="Ask about any scheme">
+      <button class="action-btn" onclick="getScheme()">Get Info</button>
+      <div id="scheme_output"></div>
+      <audio id="scheme_audio" controls style="display:none"></audio>
+    </section>
+    <section class="tab-content" id="pest">
+      <h3>Pest Management</h3>
+      <input type="text" id="pest_crop" placeholder="Crop Name">
+      <input type="number" step="0.1" id="pest_area" placeholder="Area in hectares">
+      <button class="action-btn" onclick="getPest()">Get Plan</button>
+      <div id="pest_output"></div>
+      <audio id="pest_audio" controls style="display:none"></audio>
+    </section>
+  </div>
+  <script>
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
+        document.getElementById(this.dataset.tab).style.display = 'block';
+      });
+    });
+    // Language selection
+    function getSelectedLang() {
+      return document.querySelector('input[name="lang"]:checked').value;
+    }
+    document.querySelectorAll('input[name="lang"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        // Optionally, clear outputs or update UI on language change
+      });
+    });
+    // Weather icon update
+    function updateWeatherIcon(condition) {
+      const iconSpan = document.getElementById('weather-icon');
+      let icon = '☀️';
+      if (/thunder/i.test(condition)) icon = '⛈️';
+      else if (/rain|shower/i.test(condition)) icon = '🌧️';
+      else if (/cloud/i.test(condition)) icon = '☁️';
+      else if (/sun|clear/i.test(condition)) icon = '☀️';
+      iconSpan.textContent = icon;
+    }
+    async function getWeather() {
+      const loc = document.getElementById('weather_loc').value;
+      const lang = getSelectedLang();
+      const res = await fetch('/get_weather', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ location: loc, lang })
+      });
+      const data = await res.json();
+      const outputDiv = document.getElementById('weather_output');
+      const audio = document.getElementById('weather_audio');
+      if (data.report || data.error) {
+        outputDiv.innerText = data.report || data.error;
+        outputDiv.style.display = 'block';
+        if (data.audio) {
+          audio.src = "data:audio/mp3;base64," + data.audio;
+          audio.style.display = 'block';
+          audio.play();
+        } else {
+          audio.style.display = 'none';
+        }
+      } else {
+        outputDiv.innerText = '';
+        outputDiv.style.display = 'none';
+        audio.style.display = 'none';
+      }
+    }
+    async function getCrop() {
+      const lang = getSelectedLang();
+      const payload = {
+        N: +document.getElementById('n').value,
+        P: +document.getElementById('p').value,
+        K: +document.getElementById('k').value,
+        temperature: +document.getElementById('temp').value,
+        humidity: +document.getElementById('hum').value,
+        ph: +document.getElementById('ph').value,
+        rainfall: +document.getElementById('rain').value,
+        lang
+      };
+      const res = await fetch('/crop_recommendation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      document.getElementById('crop_output').innerText = data.recommendation || data.error;
+      if (data.audio) {
+        const audio = document.getElementById('crop_audio');
+        audio.src = "data:audio/mp3;base64," + data.audio;
+        audio.hidden = false;
+        audio.play();
+      }
+    }
+    async function getScheme() {
+      const question = document.getElementById('scheme_q').value;
+      const lang = getSelectedLang();
+      const res = await fetch('/get_scheme', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, lang })
+      });
+      const data = await res.json();
+      document.getElementById('scheme_output').innerText = data.answer || data.error;
+      if (data.audio) {
+        const audio = document.getElementById('scheme_audio');
+        audio.src = "data:audio/mp3;base64," + data.audio;
+        audio.hidden = false;
+        audio.play();
+      }
+    }
+    async function getPest() {
+      const crop = document.getElementById('pest_crop').value;
+      const area = +document.getElementById('pest_area').value;
+      const lang = getSelectedLang();
+      const res = await fetch('/pest_management', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ crop, area, lang })
+      });
+      const data = await res.json();
+      const div = document.getElementById('pest_output');
+      div.innerHTML = '';
+      if (data.results) {
+        data.results.forEach(item => {
+          let html = `<p>${item.text}</p>`;
+          if (item.audio) {
+            html += `<audio controls style="display:block;max-width:350px;margin:0 auto 14px auto;">
+                       <source src="data:audio/mp3;base64,${item.audio}" type="audio/mp3">
+                       Your browser does not support the audio element.
+                     </audio>`;
+          }
+          div.innerHTML += html;
+        });
+      } else {
+        div.innerText = data.error || "Something went wrong";
+      }
+    }
+  </script>
+</body>
+</html>
