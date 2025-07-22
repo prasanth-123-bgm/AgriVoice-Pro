@@ -9,3 +9,4 @@ torch
 python-dotenv
 deep-translator
 IPython
+gunicorn
