@@ -146,5 +146,5 @@ def pest_management():
             results.append({'text': english_text, 'audio': audio})
     return jsonify({'results': results})
 
-if __name__ == '__main__':  # Use Render's port or default to 5000
-    app.run(host='0.0.0.0', port=port) 
+if __name__ == '__main__':
+    app.run(debug=True,host='0.0.0.0')
