@@ -8,4 +8,4 @@ sentence-transformers
 torch
 python-dotenv
 deep-translator
-IPyhton
+IPython
