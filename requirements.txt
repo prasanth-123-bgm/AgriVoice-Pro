@@ -10,3 +10,4 @@ python-dotenv
 deep-translator
 IPython
 gunicorn
+scikit-learn
